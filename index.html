@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="五子棋">
+  <meta name="theme-color" content="#1a1008">
+  <link rel="manifest" href="manifest.json">
+  <title>五子棋</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --board-color: #c8933a;
+      --board-dark: #a0722a;
+      --board-shadow: #7a5520;
+      --bg-dark: #1a1008;
+      --bg-mid: #2a1e0e;
+      --gold: #d4a843;
+      --gold-light: #f0c860;
+      --red: #c0392b;
+      --green: #27ae60;
+      --text-light: #f5e6c8;
+      --text-dim: #a08060;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      background: var(--bg-dark);
+      font-family: 'Noto Serif TC', serif;
+      color: var(--text-light);
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center;
+      overflow-x: hidden;
+      background-image:
+        radial-gradient(ellipse at 20% 20%, rgba(212,168,67,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 80%, rgba(192,57,43,0.06) 0%, transparent 60%);
+    }
+
+    header { width:100%; text-align:center; padding:18px 16px 8px; }
+    header::after { content:''; display:block; margin:8px auto 0; width:60px; height:2px;
+      background:linear-gradient(90deg,transparent,var(--gold),transparent); }
+    .title-main {
+      font-family:'ZCOOL XiaoWei',serif; font-size:2rem; letter-spacing:0.3em;
+      background:linear-gradient(135deg,var(--gold-light),var(--gold),#b8860b);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    }
+    .title-sub { font-size:0.68rem; letter-spacing:0.2em; color:var(--text-dim); margin-top:2px; }
+
+    .nav-tabs {
+      display:flex; background:rgba(255,255,255,0.05);
+      border:1px solid rgba(255,255,255,0.1); border-radius:10px;
+      overflow:hidden; margin:10px 0 6px; width:calc(100% - 24px); max-width:420px;
+    }
+    .nav-tab {
+      flex:1; padding:9px 4px; background:none; border:none;
+      color:var(--text-dim); font-family:'Noto Serif TC',serif; font-size:0.78rem;
+      cursor:pointer; letter-spacing:0.04em; transition:all 0.2s;
+    }
+    .nav-tab.active { background:rgba(212,168,67,0.2); color:var(--gold-light); }
+
+    /* GAME */
+    #gameView { width:100%; display:flex; flex-direction:column; align-items:center; }
+    .mode-bar { display:flex; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
+      border-radius:8px; overflow:hidden; margin-bottom:6px; }
+    .mode-btn { padding:7px 16px; background:none; border:none; color:var(--text-dim);
+      font-family:'Noto Serif TC',serif; font-size:0.78rem; cursor:pointer; transition:all 0.2s; }
+    .mode-btn.active { background:rgba(212,168,67,0.2); color:var(--gold-light); }
+    .score-bar { display:flex; align-items:center; justify-content:center; gap:12px; margin:4px 0;
+      padding:8px 20px; background:rgba(255,255,255,0.04); border:1px solid rgba(212,168,67,0.2); border-radius:50px; }
+    .player-info { display:flex; align-items:center; gap:8px; padding:4px 12px; border-radius:30px; transition:all 0.3s; }
+    .player-info.active { background:rgba(212,168,67,0.15); box-shadow:0 0 12px rgba(212,168,67,0.2); }
+    .stone-dot { width:18px; height:18px; border-radius:50%; border:2px solid rgba(255,255,255,0.2); }
+    .stone-dot.black { background:radial-gradient(circle at 35% 35%,#555,#111); }
+    .stone-dot.white { background:radial-gradient(circle at 35% 35%,#fff,#ccc); }
+    .player-name { font-size:0.82rem; }
+    .player-score { font-size:1.05rem; font-weight:700; color:var(--gold); }
+    .score-sep { color:var(--text-dim); }
+    .turn-indicator { font-size:0.7rem; color:var(--gold-light); text-align:center;
+      height:16px; letter-spacing:0.1em; animation:pulse 1.5s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+    .board-wrap { position:relative; margin:6px auto; padding:6px; }
+    .board-outer { background:linear-gradient(145deg,var(--board-color),var(--board-dark));
+      border-radius:8px; padding:14px;
+      box-shadow:0 20px 60px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.15),
+        0 0 0 3px var(--board-shadow),0 0 0 5px rgba(0,0,0,0.4); }
+    canvas { display:block; cursor:pointer; border-radius:2px; }
+    .controls { display:flex; gap:8px; margin:8px 0 16px; flex-wrap:wrap; justify-content:center; }
+    .btn { padding:9px 18px; border:none; border-radius:6px; font-family:'Noto Serif TC',serif;
+      font-size:0.82rem; letter-spacing:0.08em; cursor:pointer; transition:all 0.2s; }
+    .btn-primary { background:linear-gradient(135deg,var(--gold),#b8860b); color:#1a0e00; font-weight:700;
+      box-shadow:0 4px 12px rgba(212,168,67,0.3); }
+    .btn-primary:hover { transform:translateY(-1px); }
+    .btn-secondary { background:rgba(255,255,255,0.07); color:var(--text-light); border:1px solid rgba(255,255,255,0.12); }
+    .btn-secondary:hover { background:rgba(255,255,255,0.12); }
+    .btn-danger { background:rgba(192,57,43,0.2); color:#e74c3c; border:1px solid rgba(192,57,43,0.3); }
+    .btn-hint {
+      background: linear-gradient(135deg, rgba(52,152,219,0.3), rgba(41,128,185,0.3));
+      color: #74b9ff; border: 1px solid rgba(52,152,219,0.4);
+      position: relative; overflow: hidden;
+    }
+    .btn-hint:hover { background: linear-gradient(135deg, rgba(52,152,219,0.45), rgba(41,128,185,0.45)); }
+    .btn-hint.thinking {
+      animation: hintPulse 0.8s ease-in-out infinite;
+      pointer-events: none;
+    }
+    @keyframes hintPulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+    /* ── Hint Card ── */
+    .hint-card {
+      width: calc(100% - 24px); max-width: 420px;
+      background: linear-gradient(135deg, rgba(52,152,219,0.12), rgba(41,128,185,0.08));
+      border: 1px solid rgba(52,152,219,0.35);
+      border-radius: 12px; padding: 14px 16px; margin-bottom: 12px;
+      animation: hintCardIn 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes hintCardIn { from{transform:translateY(10px) scale(0.96);opacity:0} to{transform:none;opacity:1} }
+    .hint-card-header {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+    }
+    .hint-icon { font-size: 1.2rem; }
+    .hint-label {
+      flex: 1; font-size: 0.88rem; font-weight: 700; color: #74b9ff; letter-spacing: 0.05em;
+    }
+    .hint-close {
+      background: none; border: none; color: var(--text-dim); font-size: 0.9rem;
+      cursor: pointer; padding: 2px 6px; border-radius: 4px;
+    }
+    .hint-close:hover { color: var(--text-light); background: rgba(255,255,255,0.08); }
+    .hint-reason {
+      font-size: 0.82rem; line-height: 1.7; color: var(--text-light); margin-bottom: 8px;
+    }
+    .hint-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+    .hint-tag {
+      font-size: 0.7rem; padding: 3px 10px; border-radius: 12px; font-weight: 700;
+    }
+    .hint-tag-win    { background: rgba(231,76,60,0.25);   color: #e74c3c; }
+    .hint-tag-block  { background: rgba(39,174,96,0.25);   color: #2ecc71; }
+    .hint-tag-atk    { background: rgba(241,196,15,0.25);  color: #f1c40f; }
+    .hint-tag-pos    { background: rgba(52,152,219,0.25);  color: #74b9ff; }
+
+    /* ── Hint pulse animation on canvas ── */
+    @keyframes hintRing {
+      0%   { opacity: 1;   transform: scale(1);   }
+      50%  { opacity: 0.5; transform: scale(1.15);}
+      100% { opacity: 1;   transform: scale(1);   }
+    }
+    .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75);
+      backdrop-filter:blur(6px); z-index:200; align-items:center; justify-content:center; }
+    .overlay.show { display:flex; }
+    .win-card { background:linear-gradient(135deg,var(--bg-mid),#0e0906);
+      border:1px solid rgba(212,168,67,0.4); border-radius:16px; padding:36px 44px; text-align:center;
+      box-shadow:0 24px 80px rgba(0,0,0,0.8); animation:cardIn 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+    @keyframes cardIn { from{transform:scale(0.7) translateY(40px);opacity:0} to{transform:scale(1);opacity:1} }
+    .win-emoji { font-size:3rem; margin-bottom:10px; }
+    .win-title { font-family:'ZCOOL XiaoWei',serif; font-size:1.7rem; letter-spacing:0.3em;
+      background:linear-gradient(135deg,var(--gold-light),var(--gold));
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin-bottom:6px; }
+    .win-sub { color:var(--text-dim); font-size:0.82rem; margin-bottom:24px; }
+    .win-btns { display:flex; gap:10px; justify-content:center; }
+
+    /* TUTORIAL */
+    #tutorialView { width:100%; max-width:460px; padding:0 12px 40px; display:none; flex-direction:column; }
+    .progress-wrap { margin:6px 0 14px; }
+    .progress-label { font-size:0.72rem; color:var(--text-dim); margin-bottom:5px;
+      display:flex; justify-content:space-between; }
+    .progress-bar { height:4px; background:rgba(255,255,255,0.1); border-radius:2px; overflow:hidden; }
+    .progress-fill { height:100%; background:linear-gradient(90deg,var(--gold),var(--gold-light));
+      border-radius:2px; transition:width 0.5s ease; }
+    .cat-pills { display:flex; gap:8px; flex-wrap:wrap; margin:4px 0 12px; }
+    .cat-pill { padding:6px 14px; border-radius:20px; border:1px solid rgba(212,168,67,0.3);
+      background:rgba(255,255,255,0.04); color:var(--text-dim); font-size:0.75rem;
+      cursor:pointer; transition:all 0.2s; font-family:'Noto Serif TC',serif; }
+    .cat-pill.active { background:rgba(212,168,67,0.2); color:var(--gold-light); border-color:var(--gold); }
+    .lesson-list { display:flex; flex-direction:column; gap:10px; }
+    .lesson-card { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
+      border-radius:12px; padding:14px 16px; cursor:pointer; transition:all 0.2s;
+      display:flex; align-items:center; gap:12px; }
+    .lesson-card:hover { background:rgba(212,168,67,0.08); border-color:rgba(212,168,67,0.3); }
+    .lesson-card.done { border-left:3px solid var(--green); }
+    .lesson-icon { font-size:1.6rem; flex-shrink:0; }
+    .lesson-meta { flex:1; }
+    .lesson-title { font-size:0.9rem; font-weight:700; margin-bottom:3px; }
+    .lesson-desc { font-size:0.72rem; color:var(--text-dim); line-height:1.4; }
+    .lesson-badge { font-size:0.65rem; padding:2px 8px; border-radius:10px; flex-shrink:0; }
+    .badge-basic { background:rgba(39,174,96,0.2); color:#2ecc71; }
+    .badge-mid   { background:rgba(241,196,15,0.2); color:#f1c40f; }
+    .badge-adv   { background:rgba(192,57,43,0.2);  color:#e74c3c; }
+
+    /* LESSON MODAL */
+    .lesson-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.88);
+      backdrop-filter:blur(8px); z-index:300; overflow-y:auto; }
+    .lesson-modal.show { display:block; }
+    .lesson-modal-inner { min-height:100vh; padding:20px 16px 60px; max-width:480px; margin:0 auto; }
+    .modal-header { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+    .modal-back { background:rgba(255,255,255,0.08); border:none; color:var(--text-light);
+      border-radius:8px; padding:8px 14px; font-family:'Noto Serif TC',serif; font-size:0.82rem; cursor:pointer; }
+    .modal-title { font-family:'ZCOOL XiaoWei',serif; font-size:1.2rem; letter-spacing:0.12em; }
+    .demo-board-wrap { text-align:center; margin:10px 0; }
+    #demoCanvas { border-radius:8px; max-width:100%; }
+    .step-nav { display:flex; align-items:center; justify-content:space-between; margin:10px 0; gap:8px; }
+    .step-info { flex:1; text-align:center; font-size:0.75rem; color:var(--text-dim); }
+    .step-dots { display:flex; gap:5px; justify-content:center; margin-bottom:4px; }
+    .step-dot { width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,0.2); transition:all 0.2s; }
+    .step-dot.active { background:var(--gold); transform:scale(1.3); }
+    .step-btn { padding:8px 14px; border:1px solid rgba(212,168,67,0.3); background:rgba(212,168,67,0.1);
+      color:var(--gold-light); border-radius:8px; font-family:'Noto Serif TC',serif;
+      font-size:0.78rem; cursor:pointer; transition:all 0.2s; }
+    .step-btn:disabled { opacity:0.3; cursor:default; }
+    .step-btn:not(:disabled):hover { background:rgba(212,168,67,0.2); }
+    .explain-box { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
+      border-radius:10px; padding:14px; margin:8px 0; }
+    .explain-title { font-size:0.88rem; font-weight:700; color:var(--gold-light); margin-bottom:8px; }
+    .explain-body { font-size:0.82rem; line-height:1.85; color:var(--text-light); }
+    .explain-body .tag { display:inline-block; padding:1px 8px; border-radius:10px;
+      font-size:0.72rem; margin:2px; vertical-align:middle; }
+    .tag-atk { background:rgba(192,57,43,0.3); color:#e74c3c; }
+    .tag-def { background:rgba(39,174,96,0.3);  color:#2ecc71; }
+    .tag-key { background:rgba(212,168,67,0.25); color:var(--gold-light); }
+    .tip-box { background:rgba(212,168,67,0.07); border-left:3px solid var(--gold);
+      border-radius:0 8px 8px 0; padding:12px 14px; margin:8px 0;
+      font-size:0.8rem; line-height:1.7; color:var(--text-dim); }
+    .tip-box strong { color:var(--gold-light); }
+    .complete-btn { width:100%; padding:13px; margin-top:18px; border:none; border-radius:10px;
+      background:linear-gradient(135deg,var(--gold),#b8860b); color:#1a0e00;
+      font-family:'Noto Serif TC',serif; font-size:0.92rem; font-weight:700;
+      letter-spacing:0.1em; cursor:pointer; transition:all 0.2s; }
+    .complete-btn:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(212,168,67,0.3); }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="title-main">五子棋</div>
+  <div class="title-sub">GOMOKU · 連珠</div>
+</header>
+
+<div class="nav-tabs">
+  <button class="nav-tab active" id="tabGame"     onclick="switchTab('game')">♟ 對弈</button>
+  <button class="nav-tab"        id="tabTutorial" onclick="switchTab('tutorial')">📖 教學</button>
+</div>
+
+<!-- GAME VIEW -->
+<div id="gameView">
+  <div class="mode-bar">
+    <button class="mode-btn active" id="modeHuman" onclick="setMode('human')">👥 雙人對戰</button>
+    <button class="mode-btn"        id="modeAI"    onclick="setMode('ai')">🤖 人機對戰</button>
+  </div>
+  <div class="score-bar">
+    <div class="player-info" id="p1info">
+      <div class="stone-dot black"></div>
+      <span class="player-name">黑子</span>
+      <span class="player-score" id="score1">0</span>
+    </div>
+    <span class="score-sep">—</span>
+    <div class="player-info" id="p2info">
+      <div class="stone-dot white"></div>
+      <span class="player-name" id="p2name">白子</span>
+      <span class="player-score" id="score2">0</span>
+    </div>
+  </div>
+  <div class="turn-indicator" id="turnText">黑子先手</div>
+  <div class="board-wrap">
+    <div class="board-outer"><canvas id="board"></canvas></div>
+  </div>
+  <div class="controls">
+    <button class="btn btn-primary"   onclick="newGame()">新局</button>
+    <button class="btn btn-secondary" onclick="undoMove()">悔棋</button>
+    <button class="btn btn-hint"      onclick="showHint()" id="hintBtn">💡 建議</button>
+    <button class="btn btn-danger"    onclick="resetScore()">清除分數</button>
+  </div>
+
+  <!-- Hint Info Card -->
+  <div class="hint-card" id="hintCard" style="display:none">
+    <div class="hint-card-header">
+      <span class="hint-icon" id="hintIcon">💡</span>
+      <span class="hint-label" id="hintLabel">建議落點</span>
+      <button class="hint-close" onclick="clearHint()">✕</button>
+    </div>
+    <div class="hint-reason" id="hintReason"></div>
+    <div class="hint-tags"   id="hintTags"></div>
+  </div>
+</div>
+
+<!-- TUTORIAL VIEW -->
+<div id="tutorialView">
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>學習進度</span><span id="progressText">0 / 12 完成</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  </div>
+  <div class="cat-pills">
+    <button class="cat-pill active" onclick="filterCat('all',this)">全部</button>
+    <button class="cat-pill" onclick="filterCat('basic',this)">基礎棋步</button>
+    <button class="cat-pill" onclick="filterCat('formation',this)">攻擊棋形</button>
+    <button class="cat-pill" onclick="filterCat('defense',this)">防守策略</button>
+    <button class="cat-pill" onclick="filterCat('opening',this)">開局棋陣</button>
+  </div>
+  <div class="lesson-list" id="lessonList"></div>
+</div>
+
+<!-- LESSON MODAL -->
+<div class="lesson-modal" id="lessonModal">
+  <div class="lesson-modal-inner">
+    <div class="modal-header">
+      <button class="modal-back" onclick="closeLesson()">← 返回</button>
+      <div class="modal-title" id="modalTitle"></div>
+    </div>
+    <div class="demo-board-wrap"><canvas id="demoCanvas"></canvas></div>
+    <div class="step-nav">
+      <button class="step-btn" id="prevBtn" onclick="prevStep()">上一步</button>
+      <div class="step-info">
+        <div class="step-dots" id="stepDots"></div>
+        <span id="stepText">步驟 1</span>
+      </div>
+      <button class="step-btn" id="nextBtn" onclick="nextStep()">下一步</button>
+    </div>
+    <div class="explain-box">
+      <div class="explain-title" id="explainTitle"></div>
+      <div class="explain-body"  id="explainBody"></div>
+    </div>
+    <div class="tip-box" id="tipBox"></div>
+    <button class="complete-btn" id="completeBtn" onclick="completeLesson()">✓ 標記為已學習</button>
+  </div>
+</div>
+
+<!-- Win Overlay -->
+<div class="overlay" id="overlay">
+  <div class="win-card">
+    <div class="win-emoji" id="winEmoji">🏆</div>
+    <div class="win-title"  id="winTitle">勝利</div>
+    <div class="win-sub"    id="winSub">恭喜！</div>
+    <div class="win-btns">
+      <button class="btn btn-primary"   onclick="newGame()">再來一局</button>
+      <button class="btn btn-secondary" onclick="closeOverlay()">查看棋盤</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   LESSON DATA — 12 堂課，涵蓋基礎、攻擊、防守、開局
+══════════════════════════════════════════════════════ */
+const LESSONS = [
+  {
+    id:'basic1', cat:'basic', icon:'🎯', badge:'basic', badgeText:'入門',
+    title:'五子連線 — 勝利條件',
+    desc:'了解五子棋最基本的勝利規則：率先連成五子者獲勝。',
+    steps:[
+      { title:'什麼是「五子」？',
+        body:'五子棋的目標很簡單：<span class="tag tag-key">率先在棋盤上連成五顆相同顏色的棋子</span>即獲勝。可以是橫、直、斜任意方向。',
+        tip:'<strong>重點：</strong>只要五顆連成一線，不論哪個方向都算勝利！',
+        board:[], highlights:[] },
+      { title:'橫向五連',
+        body:'黑子在同一排連續落子五枚，形成<span class="tag tag-key">橫向五連</span>，黑子獲勝！這是最直覺的連線方式。',
+        tip:'橫向五連最容易被對手察覺，實戰中通常需要配合其他方向同時威脅。',
+        board:[[7,3,'b'],[7,4,'b'],[7,5,'b'],[7,6,'b'],[7,7,'b']],
+        highlights:[[7,3],[7,4],[7,5],[7,6],[7,7]] },
+      { title:'縱向五連',
+        body:'同一列也可以連成五子。縱向五連同樣有效，<span class="tag tag-key">方向不重要，關鍵是連成五子</span>。',
+        tip:'縱向攻擊有時會被對手忽略，是很好的攻擊角度。',
+        board:[[4,7,'b'],[5,7,'b'],[6,7,'b'],[7,7,'b'],[8,7,'b']],
+        highlights:[[4,7],[5,7],[6,7],[7,7],[8,7]] },
+      { title:'斜向五連',
+        body:'斜向（左斜或右斜）連成五子同樣算勝利。斜線攻擊<span class="tag tag-key">最難被發現</span>，是高手常用的手法！',
+        tip:'<strong>高手秘訣：</strong>斜向攻擊最不容易被注意到，實戰中要多加利用。',
+        board:[[5,5,'b'],[6,6,'b'],[7,7,'b'],[8,8,'b'],[9,9,'b']],
+        highlights:[[5,5],[6,6],[7,7],[8,8],[9,9]] },
+    ]
+  },
+  {
+    id:'basic2', cat:'basic', icon:'⚫', badge:'basic', badgeText:'入門',
+    title:'先手與後手 — 黑白的差異',
+    desc:'黑子先下有優勢，了解先後手如何影響策略佈局。',
+    steps:[
+      { title:'黑子先手優勢',
+        body:'五子棋規定<span class="tag tag-key">黑子先下</span>。先手有主動權，可以先佔領有利位置，理論上黑棋在完美對弈下必勝。',
+        tip:'正因黑子先手太有優勢，高階比賽才引入「禁手」規則限制黑方。',
+        board:[[7,7,'b']], highlights:[[7,7]] },
+      { title:'白子的應對策略',
+        body:'白子雖是後手，但可以透過<span class="tag tag-def">積極防守轉為攻勢</span>。白棋的重要原則是：不讓黑棋輕易形成雙面威脅。',
+        tip:'<strong>白棋策略：</strong>防守的同時建立自己的攻擊棋形，讓每一步都有雙重價值。',
+        board:[[7,7,'b'],[7,8,'w'],[6,7,'b'],[8,8,'w']], highlights:[] },
+      { title:'最佳的天元位置',
+        body:'天元（棋盤正中央）是最有力的起始位置，黑棋通常第一步就走天元，<span class="tag tag-key">控制全盤</span>，白棋則要搶佔次優位置。',
+        tip:'<strong>記住：</strong>中央區域的棋子可延伸方向最多，越靠近中央越有利！',
+        board:[[7,7,'b']], highlights:[[6,6],[6,7],[6,8],[7,6],[7,8],[8,6],[8,7],[8,8]] },
+    ]
+  },
+  {
+    id:'form1', cat:'formation', icon:'⚔️', badge:'mid', badgeText:'進階',
+    title:'活四 — 必勝棋形',
+    desc:'活四是最強的攻擊形態，對手無法同時堵住兩端。',
+    steps:[
+      { title:'什麼是「活四」？',
+        body:'活四指連續四顆棋子，且<span class="tag tag-atk">兩端都是空格</span>。對手只能擋一端，另一端就連五獲勝——無法防守！',
+        tip:'對手看到活四，無論怎麼堵，下一步對方就會連五。這是近乎必勝的棋形！',
+        board:[[7,5,'b'],[7,6,'b'],[7,7,'b'],[7,8,'b']],
+        highlights:[[7,4],[7,9]] },
+      { title:'為什麼活四無法防守？',
+        body:'活四兩端（★位置）都可以延伸成五連。白棋只能堵一端，黑棋就在另一端落子，<span class="tag tag-atk">必然獲勝</span>。',
+        tip:'<strong>結論：</strong>活四出現時，除非你也同時有活四或衝四，否則已宣告敗局。',
+        board:[[7,5,'b'],[7,6,'b'],[7,7,'b'],[7,8,'b'],[7,9,'w']],
+        highlights:[[7,4]] },
+      { title:'如何製造活四？',
+        body:'先形成<span class="tag tag-key">活三</span>（兩端空格的三連），再在一端延伸，就能形成活四。選對手難以防守的位置落子。',
+        tip:'<strong>實戰技巧：</strong>製造活四時，盡量選對手難以兼顧的方向，讓對手顧此失彼。',
+        board:[[7,5,'b'],[7,6,'b'],[7,7,'b']],
+        highlights:[[7,4],[7,8]] },
+    ]
+  },
+  {
+    id:'form2', cat:'formation', icon:'🔥', badge:'mid', badgeText:'進階',
+    title:'雙三 — 同時兩個活三',
+    desc:'雙三讓對手無從防守，是最有殺傷力的攻擊組合。',
+    steps:[
+      { title:'什麼是「雙三」？',
+        body:'在一步棋中，同時形成<span class="tag tag-atk">兩個活三</span>的棋形稱為「雙三」（3-3）。對手只有一步棋，卻要同時封住兩個活三，根本不可能！',
+        tip:'★ 是「雙三點」——落子後同時完成橫向與縱向各一個活三，兩端都空著無法一步全擋。',
+        board:[[7,5,'b'],[7,6,'b'],[5,7,'b'],[6,7,'b']],
+        highlights:[[7,7]] },
+      { title:'雙三形成後的局面',
+        body:'黑子落在 ★（中心點）後，形成：<br>• 橫向活三：<span class="tag tag-atk">[7,5][7,6][7,7]</span>，兩端 [7,4] 與 [7,8] 皆空<br>• 縱向活三：<span class="tag tag-atk">[5,7][6,7][7,7]</span>，兩端 [4,7] 與 [8,7] 皆空<br>對手無論擋哪一邊，另一個活三下一步就能延伸為活四！',
+        tip:'<strong>尋找雙三點：</strong>找棋盤上哪個空格，同時連接兩個不同方向的兩連子，落子後兩方向都達成活三。',
+        board:[[7,5,'b'],[7,6,'b'],[7,7,'b'],[5,7,'b'],[6,7,'b'],[7,7,'b']],
+        highlights:[[7,4],[7,8],[4,7],[8,7]] },
+      { title:'如何防守雙三？',
+        body:'最好的防守是<span class="tag tag-def">預防雙三形成</span>：在對手落下雙三點之前，就先封鎖其中一個方向，讓他無法達成雙三。事後防守幾乎無效。',
+        tip:'<strong>防守原則：</strong>看到對手即將形成雙三，提前在其中一個方向的延伸端落子封堵，讓他只剩一個活三。',
+        board:[[7,5,'b'],[7,6,'b'],[5,7,'b'],[6,7,'b'],[7,8,'w']],
+        highlights:[] },
+    ]
+  },
+  {
+    id:'form3', cat:'formation', icon:'💥', badge:'mid', badgeText:'進階',
+    title:'衝四 — 強迫對手防守',
+    desc:'衝四迫使對手必須回防，讓你得到主動權展開連鎖攻擊。',
+    steps:[
+      { title:'衝四的定義',
+        body:'衝四指四顆相連但其中一端被封，<span class="tag tag-atk">只有一端可延伸</span>成五連。雖不如活四致命，但能強迫對手立即回防。',
+        tip:'衝四的英文叫「Broken Four」，因為有一端被封閉了，所以威力不如活四。',
+        board:[[7,5,'b'],[7,6,'b'],[7,7,'b'],[7,8,'b'],[7,4,'w']],
+        highlights:[[7,9]] },
+      { title:'衝四 + 活三 = 必勝',
+        body:'當你同時擁有<span class="tag tag-atk">衝四</span>和<span class="tag tag-atk">活三</span>時，對手必須優先防守衝四，你就可以在活三方向繼續發展，形成必勝局面！',
+        tip:'<strong>實戰公式：</strong>衝四逼防守 → 活三自由發展 → 形成活四或雙三 → 勝利！',
+        board:[[7,5,'b'],[7,6,'b'],[7,7,'b'],[7,8,'b'],[7,4,'w'],
+               [5,5,'b'],[5,6,'b'],[5,7,'b']],
+        highlights:[[7,9],[5,4],[5,8]] },
+    ]
+  },
+  {
+    id:'form4', cat:'formation', icon:'🌟', badge:'adv', badgeText:'高階',
+    title:'四三勝 — 必勝組合技',
+    desc:'同時出現活四與活三，讓對手陷入兩難困境，是必勝手法。',
+    steps:[
+      { title:'四三勝的概念',
+        body:'「四三勝」指在一步棋中，同時形成<span class="tag tag-atk">一個衝四</span>和<span class="tag tag-atk">一個活三</span>。對手只能選擇防一個，另一個就變成致命攻擊。',
+        tip:'四三勝是五子棋中非常重要的基本勝法，必須熟練掌握！',
+        board:[[7,5,'b'],[7,6,'b'],[7,7,'b'],[7,8,'b'],
+               [5,6,'b'],[6,6,'b'],[8,6,'b']],
+        highlights:[[7,9],[4,6],[9,6]] },
+      { title:'製造四三勝的路徑',
+        body:'步驟：① 先建立一個方向的三連 → ② 在另一方向也建立三連 → ③ 找到<span class="tag tag-key">同時延伸兩個方向</span>的落點，一步形成四三局面。',
+        tip:'<strong>記住：</strong>四三勝的關鍵是找到那個「一步兩用」的神奇落點！',
+        board:[[7,5,'b'],[7,6,'b'],[6,7,'b'],[8,7,'b']],
+        highlights:[[7,7]] },
+    ]
+  },
+  {
+    id:'def1', cat:'defense', icon:'🛡️', badge:'basic', badgeText:'入門',
+    title:'防守的時機 — 什麼時候必須擋',
+    desc:'學會判斷對手的威脅等級，做出正確的防守決策。',
+    steps:[
+      { title:'威脅等級判斷',
+        body:'遇到對手落子，要立刻判斷威脅：<br>• <span class="tag tag-atk">活四</span>：必須立刻堵！<br>• <span class="tag tag-atk">衝四</span>：必須堵<br>• <span class="tag tag-atk">活三</span>：盡快堵<br>• <span class="tag tag-key">活二</span>：視情況決定',
+        tip:'判斷對手的威脅等級，是五子棋最重要的基本功！每一步都要先看對手的棋。',
+        board:[[7,4,'w'],[7,5,'w'],[7,6,'w'],[7,7,'w']],
+        highlights:[[7,3],[7,8]] },
+      { title:'防守兼進攻的落點',
+        body:'防守時盡量選擇<span class="tag tag-def">同時能建立自己棋形</span>的落點。「一石二鳥」的防守落點，才是高手的選擇。',
+        tip:'<strong>黃金原則：</strong>防守的同時，讓自己的棋子也處於有利位置，每步棋都要有雙重價值。',
+        board:[[7,5,'w'],[7,6,'w'],[7,7,'w'],[6,6,'b'],[8,6,'b']],
+        highlights:[[7,4],[7,8]] },
+      { title:'過度防守的陷阱',
+        body:'<span class="tag tag-def">過度防守</span>會讓你始終處於被動，喪失攻擊機會。當對手威脅不致命時，可以優先建立自己的攻擊！',
+        tip:'<strong>平衡的藝術：</strong>不是每一步都要防守。評估雙方形勢，找出最優先的行動。',
+        board:[[6,6,'b'],[7,7,'b'],[8,8,'b'],[5,7,'w'],[6,7,'w']],
+        highlights:[[9,9],[5,5]] },
+    ]
+  },
+  {
+    id:'def2', cat:'defense', icon:'🔒', badge:'mid', badgeText:'進階',
+    title:'封堵技巧 — 讓對手棋形失效',
+    desc:'用最少的棋子，最有效地封鎖對手的進攻路線。',
+    steps:[
+      { title:'封堵活三',
+        body:'面對活三，必須<span class="tag tag-def">封住一端</span>，將其變成「眠三」（一端被封的三連）。封堵位置優先選擇對自己也有幫助的那一端。',
+        tip:'不是隨便堵一端就好，要挑對自己有利的方向堵！兩端都看一下再決定。',
+        board:[[7,5,'b'],[7,6,'b'],[7,7,'b']],
+        highlights:[[7,4],[7,8]] },
+      { title:'封堵斜線威脅',
+        body:'斜線的活三最容易被忽略！遇到斜向三連，同樣要及時在<span class="tag tag-def">延伸端</span>落子封堵。',
+        tip:'<strong>掃描習慣：</strong>每次對手落子後，要同時檢查橫、直、左斜、右斜四個方向！',
+        board:[[5,5,'b'],[6,6,'b'],[7,7,'b']],
+        highlights:[[4,4],[8,8]] },
+      { title:'無法封堵時的應對',
+        body:'當對手已形成活四，你必須在唯一空位落子。但若對手已有<span class="tag tag-atk">雙三或四三</span>，封一個也沒用，此時應考慮自己能否更快連五！',
+        tip:'<strong>最後手段：</strong>當防無可防時，比快——看你能否比對手更早連五！',
+        board:[[7,4,'b'],[7,5,'b'],[7,6,'b'],[7,7,'b'],[5,5,'b'],[6,6,'b'],[8,8,'b']],
+        highlights:[[7,8],[9,9]] },
+    ]
+  },
+  {
+    id:'open1', cat:'opening', icon:'🏁', badge:'basic', badgeText:'入門',
+    title:'天元開局 — 最基本的開局',
+    desc:'黑子走天元（棋盤正中央），是最常見也最穩固的開局方式。',
+    steps:[
+      { title:'天元的重要性',
+        body:'棋盤正中央稱為<span class="tag tag-key">天元</span>。黑子走天元，可以向四面八方均衡發展，是最穩固的開局。幾乎所有開局研究都從天元出發。',
+        tip:'佔據中央，等於掌握了全盤的主動權。這是所有棋類共通的原則！',
+        board:[[7,7,'b']], highlights:[[7,7]] },
+      { title:'白棋的應對：直線應',
+        body:'白棋在天元旁一格落子（直線應），形成<span class="tag tag-key">緊湊的局面</span>，雙方都需要快速建立棋形，是激烈的應法。',
+        tip:'直線應適合喜歡激烈對抗的玩家，局面複雜，節奏很快。',
+        board:[[7,7,'b'],[7,8,'w']], highlights:[] },
+      { title:'白棋的應對：斜線應',
+        body:'白棋在天元的斜對角落子（斜線應），讓局面相對<span class="tag tag-key">緩和開放</span>，雙方都有更多空間慢慢發展棋形。',
+        tip:'斜線應是較保守的應法，適合喜歡長期佈局的玩家。',
+        board:[[7,7,'b'],[8,8,'w']], highlights:[] },
+      { title:'黑棋的第三手',
+        body:'黑棋的第三手非常關鍵，要開始建立<span class="tag tag-key">棋形的骨架</span>。通常選擇與前兩顆黑子形成「L形」或「斜線」，準備往多方向延伸。',
+        tip:'<strong>開局要訣：</strong>前三手要奠定整盤棋的節奏，每步都要有明確的意圖！',
+        board:[[7,7,'b'],[8,8,'w'],[6,8,'b']],
+        highlights:[[5,9],[6,9],[5,7]] },
+    ]
+  },
+  {
+    id:'open2', cat:'opening', icon:'⚡', badge:'mid', badgeText:'進階',
+    title:'花月開局 — 經典進攻佈局',
+    desc:'花月是著名的黑棋開局，以快速建立進攻棋形為目標。',
+    steps:[
+      { title:'花月開局的來源',
+        body:'花月是五子棋的<span class="tag tag-key">經典黑棋開局定式</span>之一。名字聽起來像武俠招式，但其實是針對特定棋形的完整應法體系。',
+        tip:'花月、直月、溪月…這些聽起來像武俠招式的名稱，都是五子棋中著名的開局定式！',
+        board:[[7,7,'b']], highlights:[[7,7]] },
+      { title:'白棋直線應對',
+        body:'白棋在天元右方一格落子（H9），形成<span class="tag tag-key">直線應</span>。黑白雙方棋形緊湊，充滿火藥味，需要快速搶佔有利位置。',
+        tip:'直線應對下，雙方都要快速搶佔有利位置，節奏非常快，一步落後就被動。',
+        board:[[7,7,'b'],[7,8,'w']], highlights:[] },
+      { title:'黑棋第三手 — 花月的核心',
+        body:'黑棋在白子右上方斜落子，形成<span class="tag tag-key">斜向的棋形骨架</span>。這是花月開局的核心落點，為後續的連鎖進攻做準備。',
+        tip:'這個斜向的第三手，讓黑棋同時保有橫向和斜向的進攻可能性。',
+        board:[[7,7,'b'],[7,8,'w'],[6,9,'b']],
+        highlights:[[5,10],[6,8],[8,9]] },
+      { title:'後續發展方向',
+        body:'花月開局後，黑棋通常朝著<span class="tag tag-atk">形成雙三或四三</span>的方向發展。白棋必須及時判斷黑棋的意圖，在進攻與防守間取得平衡。',
+        tip:'<strong>學定式的目的：</strong>不是死記硬背，而是理解每一步的戰略意圖！',
+        board:[[7,7,'b'],[7,8,'w'],[6,9,'b'],[5,8,'w'],[5,9,'b']],
+        highlights:[[4,10],[6,8]] },
+    ]
+  },
+  {
+    id:'open3', cat:'opening', icon:'🌙', badge:'adv', badgeText:'高階',
+    title:'溪月開局 — 均衡型佈局',
+    desc:'溪月是攻守兼備的均衡開局，高手最愛用的定式之一。',
+    steps:[
+      { title:'溪月的特色',
+        body:'溪月開局中，黑棋走天元，白棋以<span class="tag tag-key">斜線應</span>回應。這形成了開放式的局面，雙方都有充裕時間佈局，攻守均衡。',
+        tip:'溪月開局的特色是初期棋形比較分散，雙方都有時間慢慢建立棋形骨架。',
+        board:[[7,7,'b'],[8,8,'w']], highlights:[] },
+      { title:'黑棋第三手的選擇',
+        body:'黑棋在白子斜對角落子，形成<span class="tag tag-key">三角形棋形</span>，同時保有多方向的延伸可能。這是溪月開局的標誌性第三手，極具彈性。',
+        tip:'三角形棋形非常靈活，可以根據對手的應對，靈活轉換攻擊方向。',
+        board:[[7,7,'b'],[8,8,'w'],[9,7,'b']],
+        highlights:[[8,6],[10,6],[10,8]] },
+      { title:'溪月的中盤策略',
+        body:'溪月開局的中盤重點是<span class="tag tag-key">保持棋形的靈活性</span>，不要太早鎖定單一方向。根據對手的防守，選擇最薄弱的突破口。',
+        tip:'<strong>溪月的精神：</strong>就像流水一樣，哪裡有空間就往哪裡流。不固執，要靈活！',
+        board:[[7,7,'b'],[8,8,'w'],[9,7,'b'],[8,7,'w'],[8,6,'b']],
+        highlights:[[7,5],[9,5],[10,6]] },
+    ]
+  },
+  {
+    id:'open4', cat:'opening', icon:'💡', badge:'basic', badgeText:'入門',
+    title:'常見錯誤 — 新手四大地雷',
+    desc:'了解新手最常犯的錯誤，從一開始就避免落入劣勢。',
+    steps:[
+      { title:'錯誤①：只顧進攻，忘記防守',
+        body:'新手最常見的錯誤是一昧追求自己連線，卻<span class="tag tag-atk">忽略對手已形成的威脅</span>。結果對手先連五，自己還沒意識到已輸了。',
+        tip:'每一步落子之前，先問自己：「對手現在有沒有威脅？」防守優先！',
+        board:[[7,4,'w'],[7,5,'w'],[7,6,'w'],[7,7,'w'],
+               [5,5,'b'],[5,6,'b'],[5,7,'b'],[5,8,'b']],
+        highlights:[[7,3],[7,8]] },
+      { title:'錯誤②：棋子過於分散',
+        body:'落子時如果每次都落在離自己棋子很遠的地方，棋形就會<span class="tag tag-def">太過分散</span>，無法形成有效的連線威脅。',
+        tip:'<strong>原則：</strong>棋子要「聚集」在一起，才能形成強力棋形。避免四散各處。',
+        board:[[3,3,'b'],[5,9,'b'],[9,4,'b'],[11,11,'b'],[7,1,'b']],
+        highlights:[] },
+      { title:'錯誤③：輕視中央，龜在邊角',
+        body:'靠近棋盤<span class="tag tag-key">邊緣和角落的棋子</span>，可延伸的方向受限，形成棋形的能力大幅降低。盡量在靠近中央的區域下棋！',
+        tip:'中央地帶能向八個方向延伸。邊角的棋子最多只能向四五個方向延伸，劣勢明顯。',
+        board:[[0,0,'b'],[0,14,'b'],[14,0,'b'],[14,14,'b']],
+        highlights:[[7,7]] },
+      { title:'好習慣：落子前的三步思考',
+        body:'落子前養成習慣：① <span class="tag tag-def">查對手威脅</span> → ② <span class="tag tag-key">找自己的機會</span> → ③ <span class="tag tag-atk">選最優落點</span>。先防後攻，缺一不可！',
+        tip:'<strong>三步思考法：</strong>這是所有棋類遊戲都通用的思維框架，養成習慣受用終生！',
+        board:[[7,6,'b'],[7,7,'b'],[6,7,'w'],[7,8,'w'],[8,7,'w']],
+        highlights:[[7,5],[8,6],[6,8]] },
+    ]
+  },
+];
+
+/* ══════════════════════════════════════════════════════
+   TUTORIAL STATE & DEMO BOARD
+══════════════════════════════════════════════════════ */
+let completedLessons = JSON.parse(localStorage.getItem('gomoku_lessons') || '[]');
+let currentLesson = null, currentStep = 0, currentCat = 'all';
+
+// Demo board: 9x9 mini board centered on rows 3-11, cols 3-11 of a 15x15 grid
+const demoCanvas = document.getElementById('demoCanvas');
+const dctx = demoCanvas.getContext('2d');
+const isMobile = window.innerWidth < 400;
+const D    = isMobile ? Math.floor((window.innerWidth - 48) / 10) : 34;
+const DPAD = D;
+const DSIZE = 9;
+const DC   = DPAD * 2 + D * (DSIZE - 1);
+demoCanvas.width = demoCanvas.height = DC;
+demoCanvas.style.width = DC + 'px';
+demoCanvas.style.height = DC + 'px';
+
+// Map 15x15 coords to 9x9 mini board (offset by 3)
+function mapCoord(r, c) { return [r - 3, c - 3]; }
+
+function drawDemoBoard(stones, highlights) {
+  dctx.clearRect(0, 0, DC, DC);
+  dctx.fillStyle = '#c8933a';
+  dctx.fillRect(0, 0, DC, DC);
+  dctx.strokeStyle = 'rgba(120,70,20,0.12)'; dctx.lineWidth = 1;
+  for (let i = 0; i < DC; i += 5) {
+    dctx.beginPath(); dctx.moveTo(0, i); dctx.lineTo(DC, i); dctx.stroke();
+  }
+  dctx.strokeStyle = '#5c3d1a'; dctx.lineWidth = 0.7;
+  for (let i = 0; i < DSIZE; i++) {
+    const x = DPAD+i*D, y = DPAD+i*D;
+    dctx.beginPath(); dctx.moveTo(x,DPAD); dctx.lineTo(x,DPAD+(DSIZE-1)*D); dctx.stroke();
+    dctx.beginPath(); dctx.moveTo(DPAD,y); dctx.lineTo(DPAD+(DSIZE-1)*D,y); dctx.stroke();
+  }
+  dctx.fillStyle = '#5c3d1a';
+  dctx.beginPath(); dctx.arc(DPAD+4*D, DPAD+4*D, 3, 0, Math.PI*2); dctx.fill();
+
+  // Highlights (★ = suggested positions)
+  highlights.forEach(([r, c]) => {
+    const [br, bc] = mapCoord(r, c);
+    if (br < 0 || br >= DSIZE || bc < 0 || bc >= DSIZE) return;
+    const x = DPAD+bc*D, y = DPAD+br*D;
+    dctx.strokeStyle = 'rgba(240,200,96,0.85)';
+    dctx.lineWidth = 2; dctx.setLineDash([4,3]);
+    dctx.beginPath(); dctx.arc(x, y, D*0.38, 0, Math.PI*2); dctx.stroke();
+    dctx.setLineDash([]);
+    dctx.fillStyle = 'rgba(240,200,96,0.9)';
+    dctx.font = `${D*0.38}px serif`;
+    dctx.textAlign = 'center'; dctx.textBaseline = 'middle';
+    dctx.fillText('★', x, y);
+  });
+
+  // Stones
+  stones.forEach(([r, c, p]) => {
+    const [br, bc] = mapCoord(r, c);
+    if (br < 0 || br >= DSIZE || bc < 0 || bc >= DSIZE) return;
+    const x = DPAD+bc*D, y = DPAD+br*D, radius = D*0.42;
+    const grad = dctx.createRadialGradient(x-radius*0.3,y-radius*0.3,radius*0.05,x,y,radius);
+    if (p === 'b') {
+      grad.addColorStop(0,'#666'); grad.addColorStop(0.4,'#222'); grad.addColorStop(1,'#050505');
+    } else {
+      grad.addColorStop(0,'#fff'); grad.addColorStop(0.5,'#e8e0d5'); grad.addColorStop(1,'#b0a898');
+    }
+    dctx.shadowColor='rgba(0,0,0,0.4)'; dctx.shadowBlur=4; dctx.shadowOffsetX=1; dctx.shadowOffsetY=2;
+    dctx.fillStyle = grad;
+    dctx.beginPath(); dctx.arc(x,y,radius,0,Math.PI*2); dctx.fill();
+    dctx.shadowColor='transparent';
+    if (p === 'w') {
+      const shine = dctx.createRadialGradient(x-radius*0.35,y-radius*0.35,0,x-radius*0.2,y-radius*0.2,radius*0.5);
+      shine.addColorStop(0,'rgba(255,255,255,0.6)'); shine.addColorStop(1,'rgba(255,255,255,0)');
+      dctx.fillStyle=shine; dctx.beginPath(); dctx.arc(x,y,radius,0,Math.PI*2); dctx.fill();
+    }
+  });
+}
+
+/* ══════════════════════════════════════════════════════
+   TUTORIAL UI
+══════════════════════════════════════════════════════ */
+function renderLessonList() {
+  const list = document.getElementById('lessonList');
+  list.innerHTML = '';
+  const filtered = currentCat === 'all' ? LESSONS : LESSONS.filter(l => l.cat === currentCat);
+  filtered.forEach(lesson => {
+    const done = completedLessons.includes(lesson.id);
+    const card = document.createElement('div');
+    card.className = 'lesson-card' + (done ? ' done' : '');
+    card.innerHTML = `
+      <div class="lesson-icon">${lesson.icon}</div>
+      <div class="lesson-meta">
+        <div class="lesson-title">${lesson.title}${done ? ' <span style="color:var(--green)">✓</span>' : ''}</div>
+        <div class="lesson-desc">${lesson.desc}</div>
+      </div>
+      <span class="lesson-badge badge-${lesson.badge}">${lesson.badgeText}</span>
+    `;
+    card.onclick = () => openLesson(lesson);
+    list.appendChild(card);
+  });
+  updateProgress();
+}
+
+function filterCat(cat, btn) {
+  currentCat = cat;
+  document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  renderLessonList();
+}
+
+function updateProgress() {
+  const total = LESSONS.length, done = completedLessons.length;
+  document.getElementById('progressText').textContent = `${done} / ${total} 完成`;
+  document.getElementById('progressFill').style.width = `${(done/total)*100}%`;
+}
+
+function openLesson(lesson) {
+  currentLesson = lesson; currentStep = 0;
+  document.getElementById('modalTitle').textContent = lesson.title;
+  document.getElementById('lessonModal').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  const done = completedLessons.includes(lesson.id);
+  document.getElementById('completeBtn').textContent = done ? '✓ 已學習完成' : '✓ 標記為已學習';
+  renderStep();
+}
+
+function closeLesson() {
+  document.getElementById('lessonModal').classList.remove('show');
+  document.body.style.overflow = '';
+  renderLessonList();
+}
+
+function renderStep() {
+  const lesson = currentLesson, step = lesson.steps[currentStep], total = lesson.steps.length;
+  // dots
+  const dots = document.getElementById('stepDots');
+  dots.innerHTML = '';
+  for (let i=0; i<total; i++) {
+    const d = document.createElement('div');
+    d.className = 'step-dot' + (i===currentStep?' active':'');
+    dots.appendChild(d);
+  }
+  document.getElementById('stepText').textContent = `步驟 ${currentStep+1} / ${total}`;
+  document.getElementById('prevBtn').disabled = currentStep === 0;
+  document.getElementById('nextBtn').disabled = false;
+  document.getElementById('nextBtn').textContent = currentStep===total-1 ? '完成 ✓' : '下一步';
+  document.getElementById('explainTitle').textContent = step.title;
+  document.getElementById('explainBody').innerHTML  = step.body;
+  document.getElementById('tipBox').innerHTML = step.tip ? `💡 <strong>小提示</strong><br>${step.tip}` : '';
+  drawDemoBoard(step.board || [], step.highlights || []);
+}
+
+function prevStep() { if (currentStep > 0) { currentStep--; renderStep(); } }
+function nextStep() {
+  if (currentStep < currentLesson.steps.length-1) { currentStep++; renderStep(); }
+  else completeLesson();
+}
+function completeLesson() {
+  if (!completedLessons.includes(currentLesson.id)) {
+    completedLessons.push(currentLesson.id);
+    localStorage.setItem('gomoku_lessons', JSON.stringify(completedLessons));
+  }
+  document.getElementById('completeBtn').textContent = '✓ 已學習完成';
+  setTimeout(closeLesson, 400);
+}
+
+/* ══════════════════════════════════════════════════════
+   GAME LOGIC
+══════════════════════════════════════════════════════ */
+const BOARD_SIZE = 15;
+const CELL = window.innerWidth < 380 ? Math.floor((window.innerWidth - 56) / 14) : 30;
+const PAD  = CELL;
+const CANVAS_SIZE = PAD * 2 + CELL * (BOARD_SIZE-1);
+let board = [], currentPlayer = 1, gameOver = false;
+let history = [], scores = {1:0,2:0}, mode = 'human', aiThinking = false;
+
+const canvas = document.getElementById('board');
+const ctx    = canvas.getContext('2d');
+canvas.width = canvas.height = CANVAS_SIZE;
+
+function initBoard() {
+  board = Array.from({length:BOARD_SIZE},()=>Array(BOARD_SIZE).fill(0));
+  currentPlayer=1; gameOver=false; aiThinking=false; history=[];
+  updateTurnText(); drawBoard();
+}
+
+function drawBoard() {
+  ctx.clearRect(0,0,CANVAS_SIZE,CANVAS_SIZE);
+  ctx.fillStyle='#c8933a'; ctx.fillRect(0,0,CANVAS_SIZE,CANVAS_SIZE);
+  ctx.strokeStyle='rgba(120,70,20,0.12)'; ctx.lineWidth=1;
+  for (let i=0;i<CANVAS_SIZE;i+=6){ctx.beginPath();ctx.moveTo(0,i+Math.sin(i*0.05)*2);ctx.lineTo(CANVAS_SIZE,i+Math.sin(i*0.05+1)*2);ctx.stroke();}
+  ctx.strokeStyle='#5c3d1a'; ctx.lineWidth=0.8;
+  for (let i=0;i<BOARD_SIZE;i++){
+    const x=PAD+i*CELL,y=PAD+i*CELL;
+    ctx.beginPath();ctx.moveTo(x,PAD);ctx.lineTo(x,PAD+(BOARD_SIZE-1)*CELL);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(PAD,y);ctx.lineTo(PAD+(BOARD_SIZE-1)*CELL,y);ctx.stroke();
+  }
+  [[3,3],[3,7],[3,11],[7,3],[7,7],[7,11],[11,3],[11,7],[11,11]].forEach(([r,c])=>{
+    ctx.fillStyle='#5c3d1a';ctx.beginPath();ctx.arc(PAD+c*CELL,PAD+r*CELL,3,0,Math.PI*2);ctx.fill();
+  });
+  for (let r=0;r<BOARD_SIZE;r++) for (let c=0;c<BOARD_SIZE;c++) if(board[r][c]) drawStone(r,c,board[r][c]);
+  if (history.length>0){
+    const last=history[history.length-1];
+    ctx.strokeStyle=last.player===1?'rgba(255,200,0,0.9)':'rgba(255,100,0,0.9)';
+    ctx.lineWidth=2; ctx.beginPath(); ctx.arc(PAD+last.c*CELL,PAD+last.r*CELL,CELL*0.18,0,Math.PI*2); ctx.stroke();
+  }
+}
+
+function drawStone(r,c,player){
+  const x=PAD+c*CELL,y=PAD+r*CELL,radius=CELL*0.44;
+  const grad=ctx.createRadialGradient(x-radius*0.3,y-radius*0.3,radius*0.05,x,y,radius);
+  if(player===1){grad.addColorStop(0,'#666');grad.addColorStop(0.4,'#222');grad.addColorStop(1,'#050505');}
+  else{grad.addColorStop(0,'#fff');grad.addColorStop(0.5,'#e8e0d5');grad.addColorStop(1,'#b0a898');}
+  ctx.shadowColor='rgba(0,0,0,0.5)';ctx.shadowBlur=5;ctx.shadowOffsetX=2;ctx.shadowOffsetY=3;
+  ctx.fillStyle=grad;ctx.beginPath();ctx.arc(x,y,radius,0,Math.PI*2);ctx.fill();
+  ctx.shadowColor='transparent';
+  if(player===2){
+    const shine=ctx.createRadialGradient(x-radius*0.35,y-radius*0.35,0,x-radius*0.2,y-radius*0.2,radius*0.5);
+    shine.addColorStop(0,'rgba(255,255,255,0.6)');shine.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=shine;ctx.beginPath();ctx.arc(x,y,radius,0,Math.PI*2);ctx.fill();
+  }
+}
+
+function highlightWin(cells){cells.forEach(([r,c])=>{ctx.strokeStyle='#f0c860';ctx.lineWidth=3;ctx.beginPath();ctx.arc(PAD+c*CELL,PAD+r*CELL,CELL*0.44,0,Math.PI*2);ctx.stroke();});}
+
+/* ══════════════════════════════════════════════════════
+   HINT ENGINE — 分析當前局面，給出最佳建議落點並說明原因
+   優先順序：
+   1. 己方五連（立即獲勝）
+   2. 擋對方五連（立即防守）
+   3. 己方活四
+   4. 擋對方活四
+   5. 己方衝四
+   6. 擋對方衝四
+   7. 己方活三
+   8. 擋對方活三
+   9. 整體最高分落點
+══════════════════════════════════════════════════════ */
+let hintPos = null;       // {r, c} 目前顯示的建議位置
+let hintAnimId = null;    // requestAnimationFrame ID
+let hintPhase = 0;        // 動畫相位
+
+// 分析某個位置對玩家 p 的棋形強度，回傳 { score, level, desc }
+function analyzeMove(r, c, p) {
+  const opp = p === 1 ? 2 : 1;
+  board[r][c] = p;
+
+  // 先檢查是否直接獲勝
+  if (checkWin(r, c)) {
+    board[r][c] = 0;
+    return { score: 1000000, level: 'win', desc: '落子此處可以直接連成五子獲勝！' };
+  }
+  board[r][c] = 0;
+
+  // 檢查對手是否有即將連五（需要堵）
+  board[r][c] = opp;
+  if (checkWin(r, c)) {
+    board[r][c] = 0;
+    return { score: 900000, level: 'block', desc: '對手下一步即可連五，必須立即封堵！' };
+  }
+  board[r][c] = 0;
+
+  // 詳細棋形分析
+  const myShape   = getShapeAt(r, c, p);
+  const oppShape  = getShapeAt(r, c, opp);
+
+  // 根據棋形決定優先級
+  if (myShape.live4)  return { score: 500000 + myShape.score,  level: 'atk',   desc: `形成活四！對手無法同時封住兩端，下步可連五。（我方最強攻勢）` };
+  if (oppShape.live4) return { score: 480000 + oppShape.score, level: 'block', desc: `對手即將形成活四，必須優先封堵此位置，否則將無法防守！` };
+  if (myShape.rush4)  return { score: 300000 + myShape.score,  level: 'atk',   desc: `形成衝四，強迫對手回防，同時可配合其他方向形成必勝局。` };
+  if (oppShape.rush4) return { score: 280000 + oppShape.score, level: 'block', desc: `對手即將形成衝四，搶先封堵可讓對手失去主動權。` };
+  if (myShape.live3)  return { score: 150000 + myShape.score,  level: 'atk',   desc: `形成活三！兩端都有空間延伸，下步可嘗試形成活四或雙三。` };
+  if (oppShape.live3) return { score: 130000 + oppShape.score, level: 'block', desc: `對手即將形成活三，及早封堵可壓制對手的進攻節奏。` };
+
+  // 綜合分數
+  const combined = myShape.score * 1.1 + oppShape.score;
+  let desc = '均衡落點，同時發展己方棋形並牽制對手。';
+  if (myShape.score > oppShape.score * 1.5) desc = '進攻性落點，有利於建立己方連子棋形。';
+  else if (oppShape.score > myShape.score * 1.5) desc = '防守性落點，有效壓制對手的棋形發展。';
+  return { score: combined, level: 'pos', desc };
+}
+
+// 計算落子後的棋形特徵（活四、衝四、活三…）
+function getShapeAt(r, c, p) {
+  board[r][c] = p;
+  let live4=false, rush4=false, live3=false, score=0;
+  const dirs = [[0,1],[1,0],[1,1],[1,-1]];
+  for (const [dr,dc] of dirs) {
+    let cnt=1, openEnds=0, blocked=0;
+    for (let d=1;d<5;d++){
+      const nr=r+dr*d,nc=c+dc*d;
+      if(nr<0||nr>=BOARD_SIZE||nc<0||nc>=BOARD_SIZE){blocked++;break;}
+      if(board[nr][nc]===p)cnt++;
+      else{if(!board[nr][nc])openEnds++;else blocked++;break;}
+    }
+    for (let d=1;d<5;d++){
+      const nr=r-dr*d,nc=c-dc*d;
+      if(nr<0||nr>=BOARD_SIZE||nc<0||nc>=BOARD_SIZE){blocked++;break;}
+      if(board[nr][nc]===p)cnt++;
+      else{if(!board[nr][nc])openEnds++;else blocked++;break;}
+    }
+    if (cnt>=4 && openEnds>=2) live4=true;
+    if (cnt>=4 && openEnds===1) rush4=true;
+    if (cnt>=3 && openEnds>=2) live3=true;
+    const base=[0,1,10,100,1000,100000][Math.min(cnt,5)];
+    score += base * (openEnds>0?openEnds:0.5);
+  }
+  board[r][c]=0;
+  return {live4,rush4,live3,score};
+}
+
+// 主建議函式
+function getBestHint() {
+  if (history.length===0) return { r:7, c:7, level:'pos', desc:'第一手走天元（棋盤正中央）是最穩固的開局，可向四面八方均衡發展。' };
+  const moves = getCandidates();
+  let best=null, bestResult=null, bestScore=-Infinity;
+  for (const [r,c] of moves){
+    if (board[r][c]) continue;
+    const result = analyzeMove(r, c, currentPlayer);
+    if (result.score > bestScore){ bestScore=result.score; best=[r,c]; bestResult=result; }
+  }
+  if (!best) return null;
+  return { r:best[0], c:best[1], ...bestResult };
+}
+
+// 建議按鈕觸發
+function showHint(){
+  if (gameOver||aiThinking) return;
+  if (mode==='ai'&&currentPlayer===2) return;
+  clearHint();
+  const btn = document.getElementById('hintBtn');
+  btn.textContent='🔍 分析中…'; btn.classList.add('thinking');
+  setTimeout(()=>{
+    const hint = getBestHint();
+    btn.textContent='💡 建議'; btn.classList.remove('thinking');
+    if (!hint) return;
+    hintPos = {r:hint.r, c:hint.c};
+    // 顯示說明卡片
+    const card = document.getElementById('hintCard');
+    const icons = {win:'🏆',block:'🛡️',atk:'⚔️',pos:'💡'};
+    const labels = {win:'立即獲勝',block:'緊急防守',atk:'強力進攻',pos:'最佳落點'};
+    const tagClass = {win:'hint-tag-win',block:'hint-tag-block',atk:'hint-tag-atk',pos:'hint-tag-pos'};
+    document.getElementById('hintIcon').textContent  = icons[hint.level];
+    document.getElementById('hintLabel').textContent = labels[hint.level];
+    document.getElementById('hintReason').textContent = hint.desc;
+    // 位置標籤
+    const col = String.fromCharCode(65+hint.c); // A~O
+    const row = hint.r + 1;
+    document.getElementById('hintTags').innerHTML = `
+      <span class="hint-tag ${tagClass[hint.level]}">${labels[hint.level]}</span>
+      <span class="hint-tag hint-tag-pos">位置 ${col}${row}</span>
+    `;
+    card.style.display='block';
+    // 啟動棋盤動畫
+    startHintAnimation();
+  }, 80);
+}
+
+function clearHint(){
+  hintPos=null;
+  if (hintAnimId){ cancelAnimationFrame(hintAnimId); hintAnimId=null; }
+  document.getElementById('hintCard').style.display='none';
+  drawBoard();
+}
+
+function startHintAnimation(){
+  hintPhase=0;
+  function animate(){
+    if (!hintPos){ drawBoard(); return; }
+    hintPhase += 0.06;
+    drawBoard();
+    drawHintMarker(hintPos.r, hintPos.c, hintPhase);
+    hintAnimId = requestAnimationFrame(animate);
+  }
+  animate();
+}
+
+function drawHintMarker(r, c, phase){
+  const x = PAD+c*CELL, y = PAD+r*CELL;
+  const alpha  = 0.55 + 0.45*Math.sin(phase);
+  const scale  = 1.0  + 0.18*Math.sin(phase);
+  const radius = CELL * 0.44 * scale;
+
+  // 外圈光暈
+  const glow = ctx.createRadialGradient(x,y,0,x,y,radius*1.8);
+  glow.addColorStop(0, `rgba(116,185,255,${alpha*0.35})`);
+  glow.addColorStop(1, 'rgba(116,185,255,0)');
+  ctx.fillStyle=glow; ctx.beginPath(); ctx.arc(x,y,radius*1.8,0,Math.PI*2); ctx.fill();
+
+  // 主圓環
+  ctx.strokeStyle=`rgba(116,185,255,${alpha})`;
+  ctx.lineWidth=3;
+  ctx.beginPath(); ctx.arc(x,y,radius,0,Math.PI*2); ctx.stroke();
+
+  // 四個角十字準心
+  const arm=CELL*0.28;
+  ctx.strokeStyle=`rgba(116,185,255,${alpha})`;
+  ctx.lineWidth=2;
+  [[0,-1],[0,1],[-1,0],[1,0]].forEach(([dx,dy])=>{
+    ctx.beginPath();
+    ctx.moveTo(x+dx*(radius+2), y+dy*(radius+2));
+    ctx.lineTo(x+dx*(radius+arm), y+dy*(radius+arm));
+    ctx.stroke();
+  });
+
+  // 中心點
+  ctx.fillStyle=`rgba(116,185,255,${alpha})`;
+  ctx.beginPath(); ctx.arc(x,y,2.5,0,Math.PI*2); ctx.fill();
+}
+canvas.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  const t=e.touches[0],rect=canvas.getBoundingClientRect();
+  const sx=canvas.width/rect.width,sy=canvas.height/rect.height;
+  handleClick({offsetX:(t.clientX-rect.left)*sx,offsetY:(t.clientY-rect.top)*sy});
+},{passive:false});
+
+function handleClick(e){
+  if(gameOver||aiThinking)return;
+  if(mode==='ai'&&currentPlayer===2)return;
+  const c=Math.round((e.offsetX-PAD)/CELL),r=Math.round((e.offsetY-PAD)/CELL);
+  if(r<0||r>=BOARD_SIZE||c<0||c>=BOARD_SIZE)return;
+  placeStone(r,c);
+}
+
+function placeStone(r,c){
+  if(board[r][c])return;
+  clearHint(); // 落子後清除建議標記
+  board[r][c]=currentPlayer;
+  history.push({r,c,player:currentPlayer});
+  drawBoard();
+  const win=checkWin(r,c);
+  if(win){highlightWin(win);showWin(currentPlayer);return;}
+  if(history.length===BOARD_SIZE*BOARD_SIZE){showDraw();return;}
+  currentPlayer=currentPlayer===1?2:1;
+  updateTurnText();
+  if(mode==='ai'&&currentPlayer===2)setTimeout(aiMove,300);
+}
+
+function checkWin(r,c){
+  const p=board[r][c];
+  for(const [dr,dc] of [[0,1],[1,0],[1,1],[1,-1]]){
+    const cells=[[r,c]];
+    for(let d=1;d<5;d++){const nr=r+dr*d,nc=c+dc*d;if(nr<0||nr>=BOARD_SIZE||nc<0||nc>=BOARD_SIZE||board[nr][nc]!==p)break;cells.push([nr,nc]);}
+    for(let d=1;d<5;d++){const nr=r-dr*d,nc=c-dc*d;if(nr<0||nr>=BOARD_SIZE||nc<0||nc>=BOARD_SIZE||board[nr][nc]!==p)break;cells.push([nr,nc]);}
+    if(cells.length>=5)return cells;
+  }
+  return null;
+}
+
+function aiMove(){
+  aiThinking=true;
+  let best=null,bestScore=-Infinity;
+  const moves=getCandidates();
+  for(const [r,c] of moves){
+    if(board[r][c])continue;
+    board[r][c]=2;const atk=evaluateBoard(2);board[r][c]=0;
+    board[r][c]=1;const def=evaluateBoard(1);board[r][c]=0;
+    const score=atk*1.1+def;
+    if(score>bestScore){bestScore=score;best=[r,c];}
+  }
+  aiThinking=false;
+  if(best)placeStone(best[0],best[1]);
+}
+
+function getCandidates(){
+  const result=[],visited=Array.from({length:BOARD_SIZE},()=>Array(BOARD_SIZE).fill(false));
+  for(let r=0;r<BOARD_SIZE;r++)for(let c=0;c<BOARD_SIZE;c++){
+    if(!board[r][c])continue;
+    for(let dr=-2;dr<=2;dr++)for(let dc=-2;dc<=2;dc++){
+      const nr=r+dr,nc=c+dc;
+      if(nr>=0&&nr<BOARD_SIZE&&nc>=0&&nc<BOARD_SIZE&&!board[nr][nc]&&!visited[nr][nc]){visited[nr][nc]=true;result.push([nr,nc]);}
+    }
+  }
+  return result.length?result:[[7,7]];
+}
+
+function evaluateBoard(p){
+  let total=0;
+  for(let r=0;r<BOARD_SIZE;r++)for(let c=0;c<BOARD_SIZE;c++){
+    if(board[r][c]!==p)continue;
+    for(const [dr,dc] of [[0,1],[1,0],[1,1],[1,-1]]){
+      let cnt=1,openEnds=0;
+      for(let d=1;d<5;d++){const nr=r+dr*d,nc=c+dc*d;if(nr<0||nr>=BOARD_SIZE||nc<0||nc>=BOARD_SIZE)break;if(board[nr][nc]===p)cnt++;else{if(!board[nr][nc])openEnds++;break;}}
+      for(let d=1;d<5;d++){const nr=r-dr*d,nc=c-dc*d;if(nr<0||nr>=BOARD_SIZE||nc<0||nc>=BOARD_SIZE)break;if(board[nr][nc]===p)cnt++;else{if(!board[nr][nc])openEnds++;break;}}
+      total+=[0,1,10,100,1000,100000][Math.min(cnt,5)]*(openEnds>0?openEnds:0.5);
+    }
+  }
+  return total;
+}
+
+function updateTurnText(){
+  const names=['','黑子',mode==='ai'?'AI（白子）':'白子'];
+  document.getElementById('turnText').textContent=`${names[currentPlayer]} 落子中`;
+  document.getElementById('p1info').classList.toggle('active',currentPlayer===1);
+  document.getElementById('p2info').classList.toggle('active',currentPlayer===2);
+}
+
+function showWin(player){
+  gameOver=true;scores[player]++;
+  document.getElementById('score'+player).textContent=scores[player];
+  const names={1:'黑子',2:mode==='ai'?'AI（白子）':'白子'};
+  document.getElementById('winEmoji').textContent=player===1?'⚫':'⚪';
+  document.getElementById('winTitle').textContent=`${names[player]} 勝利！`;
+  document.getElementById('winSub').textContent='恭喜連成五子！';
+  setTimeout(()=>document.getElementById('overlay').classList.add('show'),600);
+}
+
+function showDraw(){
+  gameOver=true;
+  document.getElementById('winEmoji').textContent='🤝';
+  document.getElementById('winTitle').textContent='平局';
+  document.getElementById('winSub').textContent='棋盤已滿，雙方平手！';
+  setTimeout(()=>document.getElementById('overlay').classList.add('show'),300);
+}
+
+function closeOverlay(){document.getElementById('overlay').classList.remove('show');}
+function newGame(){closeOverlay();clearHint();initBoard();document.getElementById('turnText').textContent='黑子先手';}
+function undoMove(){
+  if(gameOver||history.length===0)return;
+  clearHint();
+  const last=history.pop();board[last.r][last.c]=0;
+  if(mode==='ai'&&history.length>0&&history[history.length-1].player===2){const p=history.pop();board[p.r][p.c]=0;}
+  currentPlayer=history.length===0?1:(history[history.length-1].player===1?2:1);
+  drawBoard();updateTurnText();
+}
+function resetScore(){
+  scores={1:0,2:0};
+  document.getElementById('score1').textContent='0';
+  document.getElementById('score2').textContent='0';
+}
+function setMode(m){
+  mode=m;
+  document.getElementById('modeHuman').classList.toggle('active',m==='human');
+  document.getElementById('modeAI').classList.toggle('active',m==='ai');
+  document.getElementById('p2name').textContent=m==='ai'?'AI':'白子';
+  newGame();
+}
+
+/* ══════════════════════════════════════════════════════
+   TAB SWITCH
+══════════════════════════════════════════════════════ */
+function switchTab(tab){
+  document.getElementById('gameView').style.display     = tab==='game'     ? 'flex' : 'none';
+  document.getElementById('tutorialView').style.display = tab==='tutorial' ? 'flex' : 'none';
+  document.getElementById('tabGame').classList.toggle('active',     tab==='game');
+  document.getElementById('tabTutorial').classList.toggle('active', tab==='tutorial');
+  if(tab==='tutorial') renderLessonList();
+}
+
+initBoard();
+</script>
+</body>
+</html>
