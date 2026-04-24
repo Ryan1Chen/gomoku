@@ -67,6 +67,28 @@
     .mode-btn { padding:7px 16px; background:none; border:none; color:var(--text-dim);
       font-family:'Noto Serif TC',serif; font-size:0.78rem; cursor:pointer; transition:all 0.2s; }
     .mode-btn.active { background:rgba(212,168,67,0.2); color:var(--gold-light); }
+
+    /* ── 難度選擇列 ── */
+    .diff-bar {
+      display: flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px; padding: 5px 10px;
+      margin-bottom: 6px; transition: opacity 0.3s;
+    }
+    .diff-bar.hidden { opacity: 0.3; pointer-events: none; }
+    .diff-label { font-size: 0.7rem; color: var(--text-dim); letter-spacing: 0.05em; margin-right: 2px; }
+    .diff-btn {
+      padding: 5px 13px; border: 1px solid transparent;
+      border-radius: 6px; background: none;
+      font-family: 'Noto Serif TC', serif; font-size: 0.72rem;
+      cursor: pointer; transition: all 0.2s; color: var(--text-dim);
+      letter-spacing: 0.04em;
+    }
+    .diff-btn:hover { background: rgba(255,255,255,0.07); color: var(--text-light); }
+    .diff-btn.active-easy   { background: rgba(39,174,96,0.2);  color: #2ecc71; border-color: rgba(39,174,96,0.4); }
+    .diff-btn.active-normal { background: rgba(241,196,15,0.2); color: #f1c40f; border-color: rgba(241,196,15,0.4); }
+    .diff-btn.active-hard   { background: rgba(192,57,43,0.2);  color: #e74c3c; border-color: rgba(192,57,43,0.4); }
     .score-bar { display:flex; align-items:center; justify-content:center; gap:12px; margin:4px 0;
       padding:8px 20px; background:rgba(255,255,255,0.04); border:1px solid rgba(212,168,67,0.2); border-radius:50px; }
     .player-info { display:flex; align-items:center; gap:8px; padding:4px 12px; border-radius:30px; transition:all 0.3s; }
@@ -80,71 +102,165 @@
     .turn-indicator { font-size:0.7rem; color:var(--gold-light); text-align:center;
       height:16px; letter-spacing:0.1em; animation:pulse 1.5s ease-in-out infinite; }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
-    .board-wrap { position:relative; margin:6px auto; padding:6px; }
+
+    /* ── 三欄主佈局 ── */
+    .game-main {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 4px 8px;
+    }
+
+    /* 左欄：按鈕區 */
+    .side-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-top: 8px;
+      flex-shrink: 0;
+      width: 76px;
+    }
+    .side-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 10px 6px;
+      border: none;
+      border-radius: 10px;
+      font-family: 'Noto Serif TC', serif;
+      font-size: 0.62rem;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+    }
+    .side-btn .btn-ico { font-size: 1.3rem; line-height: 1; }
+    .side-btn-primary {
+      background: linear-gradient(135deg, var(--gold), #b8860b);
+      color: #1a0e00; font-weight: 700;
+      box-shadow: 0 4px 12px rgba(212,168,67,0.25);
+    }
+    .side-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(212,168,67,0.35); }
+    .side-btn-secondary {
+      background: rgba(255,255,255,0.07);
+      color: var(--text-light);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .side-btn-secondary:hover { background: rgba(255,255,255,0.13); }
+    .side-btn-hint {
+      background: linear-gradient(135deg, rgba(52,152,219,0.3), rgba(41,128,185,0.3));
+      color: #74b9ff;
+      border: 1px solid rgba(52,152,219,0.4);
+    }
+    .side-btn-hint:hover { background: linear-gradient(135deg, rgba(52,152,219,0.45), rgba(41,128,185,0.45)); }
+    .side-btn-hint.thinking { animation: hintPulse 0.8s ease-in-out infinite; pointer-events: none; }
+    .side-btn-danger {
+      background: rgba(192,57,43,0.18);
+      color: #e74c3c;
+      border: 1px solid rgba(192,57,43,0.3);
+    }
+    .side-btn-danger:hover { background: rgba(192,57,43,0.28); }
+
+    /* 中欄：棋盤 */
+    .board-wrap { position:relative; margin:0; padding:4px; flex-shrink:0; }
     .board-outer { background:linear-gradient(145deg,var(--board-color),var(--board-dark));
       border-radius:8px; padding:14px;
       box-shadow:0 20px 60px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.15),
         0 0 0 3px var(--board-shadow),0 0 0 5px rgba(0,0,0,0.4); }
     canvas { display:block; cursor:pointer; border-radius:2px; }
-    .controls { display:flex; gap:8px; margin:8px 0 16px; flex-wrap:wrap; justify-content:center; }
-    .btn { padding:9px 18px; border:none; border-radius:6px; font-family:'Noto Serif TC',serif;
-      font-size:0.82rem; letter-spacing:0.08em; cursor:pointer; transition:all 0.2s; }
-    .btn-primary { background:linear-gradient(135deg,var(--gold),#b8860b); color:#1a0e00; font-weight:700;
-      box-shadow:0 4px 12px rgba(212,168,67,0.3); }
-    .btn-primary:hover { transform:translateY(-1px); }
-    .btn-secondary { background:rgba(255,255,255,0.07); color:var(--text-light); border:1px solid rgba(255,255,255,0.12); }
-    .btn-secondary:hover { background:rgba(255,255,255,0.12); }
-    .btn-danger { background:rgba(192,57,43,0.2); color:#e74c3c; border:1px solid rgba(192,57,43,0.3); }
-    .btn-hint {
-      background: linear-gradient(135deg, rgba(52,152,219,0.3), rgba(41,128,185,0.3));
-      color: #74b9ff; border: 1px solid rgba(52,152,219,0.4);
-      position: relative; overflow: hidden;
-    }
-    .btn-hint:hover { background: linear-gradient(135deg, rgba(52,152,219,0.45), rgba(41,128,185,0.45)); }
-    .btn-hint.thinking {
-      animation: hintPulse 0.8s ease-in-out infinite;
-      pointer-events: none;
-    }
-    @keyframes hintPulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
 
-    /* ── Hint Card ── */
+    /* 右欄：說明區 */
+    .side-info {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-top: 8px;
+      flex-shrink: 0;
+      width: 120px;
+    }
+
+    /* 輪次顯示（移入右欄） */
+    .side-turn {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(212,168,67,0.2);
+      border-radius: 10px;
+      padding: 10px 8px;
+      text-align: center;
+    }
+    .side-turn-stone {
+      width: 26px; height: 26px; border-radius: 50%;
+      margin: 0 auto 6px;
+      border: 2px solid rgba(255,255,255,0.2);
+      transition: all 0.3s;
+    }
+    .side-turn-stone.black { background: radial-gradient(circle at 35% 35%,#555,#111); }
+    .side-turn-stone.white { background: radial-gradient(circle at 35% 35%,#fff,#ccc); }
+    .side-turn-label {
+      font-size: 0.68rem; color: var(--gold-light);
+      letter-spacing: 0.06em; animation: pulse 1.5s ease-in-out infinite;
+    }
+    .side-turn-name {
+      font-size: 0.75rem; font-weight: 700; color: var(--text-light);
+      margin-top: 3px; letter-spacing: 0.05em;
+    }
+
+    /* 建議卡片（右欄版） */
     .hint-card {
-      width: calc(100% - 24px); max-width: 420px;
       background: linear-gradient(135deg, rgba(52,152,219,0.12), rgba(41,128,185,0.08));
       border: 1px solid rgba(52,152,219,0.35);
-      border-radius: 12px; padding: 14px 16px; margin-bottom: 12px;
+      border-radius: 10px; padding: 10px;
       animation: hintCardIn 0.35s cubic-bezier(0.34,1.56,0.64,1);
     }
-    @keyframes hintCardIn { from{transform:translateY(10px) scale(0.96);opacity:0} to{transform:none;opacity:1} }
-    .hint-card-header {
-      display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
-    }
-    .hint-icon { font-size: 1.2rem; }
-    .hint-label {
-      flex: 1; font-size: 0.88rem; font-weight: 700; color: #74b9ff; letter-spacing: 0.05em;
-    }
-    .hint-close {
-      background: none; border: none; color: var(--text-dim); font-size: 0.9rem;
-      cursor: pointer; padding: 2px 6px; border-radius: 4px;
-    }
-    .hint-close:hover { color: var(--text-light); background: rgba(255,255,255,0.08); }
-    .hint-reason {
-      font-size: 0.82rem; line-height: 1.7; color: var(--text-light); margin-bottom: 8px;
-    }
-    .hint-tags { display: flex; gap: 6px; flex-wrap: wrap; }
-    .hint-tag {
-      font-size: 0.7rem; padding: 3px 10px; border-radius: 12px; font-weight: 700;
-    }
-    .hint-tag-win    { background: rgba(231,76,60,0.25);   color: #e74c3c; }
-    .hint-tag-block  { background: rgba(39,174,96,0.25);   color: #2ecc71; }
-    .hint-tag-atk    { background: rgba(241,196,15,0.25);  color: #f1c40f; }
-    .hint-tag-pos    { background: rgba(52,152,219,0.25);  color: #74b9ff; }
+    @keyframes hintCardIn { from{transform:translateY(8px) scale(0.95);opacity:0} to{transform:none;opacity:1} }
+    .hint-card-header { display:flex; align-items:center; gap:5px; margin-bottom:6px; }
+    .hint-icon { font-size: 1rem; }
+    .hint-label { flex:1; font-size:0.72rem; font-weight:700; color:#74b9ff; }
+    .hint-close { background:none; border:none; color:var(--text-dim); font-size:0.8rem;
+      cursor:pointer; padding:1px 4px; border-radius:3px; }
+    .hint-close:hover { color:var(--text-light); }
+    .hint-reason { font-size:0.7rem; line-height:1.6; color:var(--text-light); margin-bottom:6px; }
+    .hint-tags { display:flex; gap:4px; flex-wrap:wrap; }
+    .hint-tag { font-size:0.6rem; padding:2px 6px; border-radius:8px; font-weight:700; }
+    .hint-tag-win   { background:rgba(231,76,60,0.25);  color:#e74c3c; }
+    .hint-tag-block { background:rgba(39,174,96,0.25);  color:#2ecc71; }
+    .hint-tag-atk   { background:rgba(241,196,15,0.25); color:#f1c40f; }
+    .hint-tag-pos   { background:rgba(52,152,219,0.25); color:#74b9ff; }
 
-    /* ── Hint pulse animation on canvas ── */
+    /* 空白提示（還沒按建議時） */
+    .side-empty-hint {
+      background: rgba(255,255,255,0.03);
+      border: 1px dashed rgba(255,255,255,0.1);
+      border-radius: 10px; padding: 12px 8px;
+      text-align: center;
+      font-size: 0.65rem; color: var(--text-dim); line-height: 1.6;
+    }
+    .side-empty-hint .ico { font-size: 1.4rem; display:block; margin-bottom:5px; opacity:0.5; }
+
+    /* ── 手機版：小螢幕改回垂直 ── */
+    @media (max-width: 600px) {
+      .game-main { flex-direction: column; align-items: center; gap: 6px; padding: 0 4px; }
+      .side-controls {
+        flex-direction: row; width: auto; padding-top: 0;
+        justify-content: center; flex-wrap: wrap; gap: 6px;
+      }
+      .side-btn { flex-direction: row; width: auto; padding: 8px 12px; font-size: 0.72rem; }
+      .side-btn .btn-ico { font-size: 1rem; }
+      .side-info { flex-direction: row; width: 100%; padding-top: 0;
+        justify-content: center; align-items: flex-start; flex-wrap: wrap; gap: 6px; }
+      .side-turn { display: flex; align-items: center; gap: 8px; padding: 6px 12px; }
+      .side-turn-stone { margin: 0; width: 20px; height: 20px; }
+      .hint-card { flex: 1; min-width: 200px; }
+      .side-empty-hint { display: none; }
+    }
+
+    @keyframes hintPulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
     @keyframes hintRing {
-      0%   { opacity: 1;   transform: scale(1);   }
-      50%  { opacity: 0.5; transform: scale(1.15);}
-      100% { opacity: 1;   transform: scale(1);   }
+      0%   { opacity:1;  transform:scale(1);    }
+      50%  { opacity:0.5;transform:scale(1.15); }
+      100% { opacity:1;  transform:scale(1);    }
     }
     .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75);
       backdrop-filter:blur(6px); z-index:200; align-items:center; justify-content:center; }
@@ -243,9 +359,18 @@
 
 <!-- GAME VIEW -->
 <div id="gameView">
+  <!-- 模式選擇 & 計分（保持在頂部） -->
   <div class="mode-bar">
-    <button class="mode-btn active" id="modeHuman" onclick="setMode('human')">👥 雙人對戰</button>
-    <button class="mode-btn"        id="modeAI"    onclick="setMode('ai')">🤖 人機對戰</button>
+    <button class="mode-btn"        id="modeHuman" onclick="setMode('human')">👥 雙人對戰</button>
+    <button class="mode-btn active" id="modeAI"    onclick="setMode('ai')">🤖 人機對戰</button>
+  </div>
+
+  <!-- 難度選擇（只在人機模式顯示） -->
+  <div class="diff-bar" id="diffBar">
+    <span class="diff-label">難度：</span>
+    <button class="diff-btn active-normal" id="diffEasy"   onclick="setDiff('easy')">🌱 新手</button>
+    <button class="diff-btn"              id="diffNormal"  onclick="setDiff('normal')">⚔️ 正常</button>
+    <button class="diff-btn"              id="diffHard"    onclick="setDiff('hard')">🔥 高手</button>
   </div>
   <div class="score-bar">
     <div class="player-info" id="p1info">
@@ -260,26 +385,59 @@
       <span class="player-score" id="score2">0</span>
     </div>
   </div>
-  <div class="turn-indicator" id="turnText">黑子先手</div>
-  <div class="board-wrap">
-    <div class="board-outer"><canvas id="board"></canvas></div>
-  </div>
-  <div class="controls">
-    <button class="btn btn-primary"   onclick="newGame()">新局</button>
-    <button class="btn btn-secondary" onclick="undoMove()">悔棋</button>
-    <button class="btn btn-hint"      onclick="showHint()" id="hintBtn">💡 建議</button>
-    <button class="btn btn-danger"    onclick="resetScore()">清除分數</button>
-  </div>
 
-  <!-- Hint Info Card -->
-  <div class="hint-card" id="hintCard" style="display:none">
-    <div class="hint-card-header">
-      <span class="hint-icon" id="hintIcon">💡</span>
-      <span class="hint-label" id="hintLabel">建議落點</span>
-      <button class="hint-close" onclick="clearHint()">✕</button>
+  <!-- 三欄主區域 -->
+  <div class="game-main">
+
+    <!-- 左欄：操作按鈕 -->
+    <div class="side-controls">
+      <button class="side-btn side-btn-primary" onclick="newGame()">
+        <span class="btn-ico">♟</span>新局
+      </button>
+      <button class="side-btn side-btn-secondary" onclick="undoMove()">
+        <span class="btn-ico">↩</span>悔棋
+      </button>
+      <button class="side-btn side-btn-hint" onclick="showHint()" id="hintBtn">
+        <span class="btn-ico">💡</span>建議
+      </button>
+      <button class="side-btn side-btn-danger" onclick="resetScore()">
+        <span class="btn-ico">🗑</span>清除分數
+      </button>
     </div>
-    <div class="hint-reason" id="hintReason"></div>
-    <div class="hint-tags"   id="hintTags"></div>
+
+    <!-- 中欄：棋盤 -->
+    <div class="board-wrap">
+      <div class="board-outer"><canvas id="board"></canvas></div>
+    </div>
+
+    <!-- 右欄：資訊區 -->
+    <div class="side-info">
+
+      <!-- 輪次顯示 -->
+      <div class="side-turn">
+        <div class="side-turn-stone black" id="turnStone"></div>
+        <div class="side-turn-label" id="turnText">落子中</div>
+        <div class="side-turn-name" id="turnName">黑子</div>
+      </div>
+
+      <!-- 建議卡片（預設隱藏） -->
+      <div class="hint-card" id="hintCard" style="display:none">
+        <div class="hint-card-header">
+          <span class="hint-icon" id="hintIcon">💡</span>
+          <span class="hint-label" id="hintLabel">建議落點</span>
+          <button class="hint-close" onclick="clearHint()">✕</button>
+        </div>
+        <div class="hint-reason" id="hintReason"></div>
+        <div class="hint-tags"   id="hintTags"></div>
+      </div>
+
+      <!-- 尚未按建議時的提示文字 -->
+      <div class="side-empty-hint" id="emptyHint">
+        <span class="ico">💡</span>
+        不知道怎麼下？<br>按左側「建議」按鈕，<br>AI 會幫你分析<br>最佳落點！
+      </div>
+
+    </div>
   </div>
 </div>
 
@@ -785,7 +943,8 @@ const CELL = window.innerWidth < 380 ? Math.floor((window.innerWidth - 56) / 14)
 const PAD  = CELL;
 const CANVAS_SIZE = PAD * 2 + CELL * (BOARD_SIZE-1);
 let board = [], currentPlayer = 1, gameOver = false;
-let history = [], scores = {1:0,2:0}, mode = 'human', aiThinking = false;
+let history = [], scores = {1:0,2:0}, mode = 'ai', aiThinking = false;
+let difficulty = 'easy'; // 'easy' | 'normal' | 'hard'
 
 const canvas = document.getElementById('board');
 const ctx    = canvas.getContext('2d');
@@ -964,6 +1123,8 @@ function showHint(){
       <span class="hint-tag hint-tag-pos">位置 ${col}${row}</span>
     `;
     card.style.display='block';
+    const eh = document.getElementById('emptyHint');
+    if(eh) eh.style.display='none';
     // 啟動棋盤動畫
     startHintAnimation();
   }, 80);
@@ -973,6 +1134,8 @@ function clearHint(){
   hintPos=null;
   if (hintAnimId){ cancelAnimationFrame(hintAnimId); hintAnimId=null; }
   document.getElementById('hintCard').style.display='none';
+  const eh = document.getElementById('emptyHint');
+  if(eh) eh.style.display='';
   drawBoard();
 }
 
@@ -1020,6 +1183,7 @@ function drawHintMarker(r, c, phase){
   ctx.fillStyle=`rgba(116,185,255,${alpha})`;
   ctx.beginPath(); ctx.arc(x,y,2.5,0,Math.PI*2); ctx.fill();
 }
+canvas.addEventListener('click', handleClick);
 canvas.addEventListener('touchstart',e=>{
   e.preventDefault();
   const t=e.touches[0],rect=canvas.getBoundingClientRect();
@@ -1061,18 +1225,87 @@ function checkWin(r,c){
 }
 
 function aiMove(){
-  aiThinking=true;
-  let best=null,bestScore=-Infinity;
-  const moves=getCandidates();
-  for(const [r,c] of moves){
-    if(board[r][c])continue;
-    board[r][c]=2;const atk=evaluateBoard(2);board[r][c]=0;
-    board[r][c]=1;const def=evaluateBoard(1);board[r][c]=0;
-    const score=atk*1.1+def;
-    if(score>bestScore){bestScore=score;best=[r,c];}
+  aiThinking = true;
+
+  if (difficulty === 'easy') {
+    // ── 新手：只看「立即輸贏」，其餘亂下 ──────────────────
+    const moves = getCandidates();
+    // 先檢查自己能否立即連五
+    for (const [r,c] of moves) {
+      if (board[r][c]) continue;
+      board[r][c] = 2;
+      if (checkWin(r,c)) { board[r][c]=0; aiThinking=false; placeStone(r,c); return; }
+      board[r][c] = 0;
+    }
+    // 再檢查是否必須擋對手連五
+    for (const [r,c] of moves) {
+      if (board[r][c]) continue;
+      board[r][c] = 1;
+      if (checkWin(r,c)) { board[r][c]=0; aiThinking=false; placeStone(r,c); return; }
+      board[r][c] = 0;
+    }
+    // 否則從候選中隨機挑一個（加一點隨機性讓新手更真實）
+    const pool = moves.filter(([r,c]) => !board[r][c]);
+    // 從前 8 個候選（靠近現有棋子）中隨機選，避免落子太遠
+    const pickFrom = pool.slice(0, Math.min(8, pool.length));
+    const pick = pickFrom[Math.floor(Math.random() * pickFrom.length)];
+    aiThinking = false;
+    if (pick) placeStone(pick[0], pick[1]);
+
+  } else if (difficulty === 'normal') {
+    // ── 正常：原本的貪婪評估（攻守兼顧）─────────────────
+    let best=null, bestScore=-Infinity;
+    const moves = getCandidates();
+    for (const [r,c] of moves) {
+      if (board[r][c]) continue;
+      board[r][c]=2; const atk=evaluateBoard(2); board[r][c]=0;
+      board[r][c]=1; const def=evaluateBoard(1); board[r][c]=0;
+      const score = atk*1.1 + def;
+      if (score > bestScore) { bestScore=score; best=[r,c]; }
+    }
+    aiThinking = false;
+    if (best) placeStone(best[0], best[1]);
+
+  } else {
+    // ── 高手：威脅優先 + 多步預判（模擬對手反應）────────
+    let best=null, bestScore=-Infinity;
+    const moves = getCandidates();
+    for (const [r,c] of moves) {
+      if (board[r][c]) continue;
+
+      // 1. 自己落子後立即贏
+      board[r][c]=2;
+      if (checkWin(r,c)) { board[r][c]=0; aiThinking=false; placeStone(r,c); return; }
+      board[r][c]=0;
+
+      // 2. 對手落子後立即贏 → 必擋
+      board[r][c]=1;
+      if (checkWin(r,c)) { board[r][c]=0; best=[r,c]; bestScore=Infinity; break; }
+      board[r][c]=0;
+
+      // 3. 深度評估：落子後模擬對手的最佳應對
+      board[r][c]=2;
+      const myAtk = evaluateBoard(2);
+      // 模擬對手最好的應對位置（一步前瞻）
+      let oppBest = 0;
+      const oppMoves = getCandidates();
+      for (const [or,oc] of oppMoves.slice(0,15)) { // 只看前15個候選加速
+        if (board[or][oc]) continue;
+        board[or][oc]=1;
+        const s = evaluateBoard(1);
+        if (s > oppBest) oppBest = s;
+        board[or][oc]=0;
+      }
+      board[r][c]=0;
+
+      board[r][c]=1; const myDef=evaluateBoard(1); board[r][c]=0;
+      // 分數 = 自身攻擊 - 對手最佳反擊 + 防守價值
+      const score = myAtk * 1.2 - oppBest * 0.8 + myDef;
+      if (score > bestScore) { bestScore=score; best=[r,c]; }
+    }
+    aiThinking = false;
+    if (best) placeStone(best[0], best[1]);
   }
-  aiThinking=false;
-  if(best)placeStone(best[0],best[1]);
 }
 
 function getCandidates(){
@@ -1103,9 +1336,18 @@ function evaluateBoard(p){
 
 function updateTurnText(){
   const names=['','黑子',mode==='ai'?'AI（白子）':'白子'];
-  document.getElementById('turnText').textContent=`${names[currentPlayer]} 落子中`;
+  const isBlack = currentPlayer===1;
+  // 右欄輪次顯示
+  const stone = document.getElementById('turnStone');
+  if(stone){ stone.className='side-turn-stone '+(isBlack?'black':'white'); }
+  const tname = document.getElementById('turnName');
+  if(tname) tname.textContent = names[currentPlayer];
+  // 計分欄高亮
   document.getElementById('p1info').classList.toggle('active',currentPlayer===1);
   document.getElementById('p2info').classList.toggle('active',currentPlayer===2);
+  // 相容舊的 turnText（手機版仍用到）
+  const tt = document.getElementById('turnText');
+  if(tt) tt.textContent='落子中';
 }
 
 function showWin(player){
@@ -1146,6 +1388,21 @@ function setMode(m){
   document.getElementById('modeHuman').classList.toggle('active',m==='human');
   document.getElementById('modeAI').classList.toggle('active',m==='ai');
   document.getElementById('p2name').textContent=m==='ai'?'AI':'白子';
+  // 難度列只在人機模式顯示
+  const db = document.getElementById('diffBar');
+  if(db) db.classList.toggle('hidden', m==='human');
+  newGame();
+}
+
+function setDiff(d){
+  difficulty = d;
+  // 更新按鈕樣式
+  ['easy','normal','hard'].forEach(k=>{
+    const btn = document.getElementById('diff'+k.charAt(0).toUpperCase()+k.slice(1));
+    if(!btn) return;
+    btn.className = 'diff-btn';
+    if(k===d) btn.classList.add('active-'+k);
+  });
   newGame();
 }
 
@@ -1160,7 +1417,11 @@ function switchTab(tab){
   if(tab==='tutorial') renderLessonList();
 }
 
-initBoard();
+// 預設：人機對戰、新手難度
+setMode('ai');
+setDiff('easy');
+
+
 </script>
 </body>
 </html>
