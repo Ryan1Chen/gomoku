@@ -1101,10 +1101,14 @@ function showHint(){
   if (mode==='ai'&&currentPlayer===2) return;
   clearHint();
   const btn = document.getElementById('hintBtn');
-  btn.textContent='🔍 分析中…'; btn.classList.add('thinking');
+  btn.innerHTML='<span class="btn-ico">🔍</span>分析中…';
+  btn.classList.add('thinking');
+  btn.disabled = true;
   setTimeout(()=>{
     const hint = getBestHint();
-    btn.textContent='💡 建議'; btn.classList.remove('thinking');
+    btn.innerHTML='<span class="btn-ico">💡</span>建議';
+    btn.classList.remove('thinking');
+    btn.disabled = false;
     if (!hint) return;
     hintPos = {r:hint.r, c:hint.c};
     // 顯示說明卡片
@@ -1136,6 +1140,13 @@ function clearHint(){
   document.getElementById('hintCard').style.display='none';
   const eh = document.getElementById('emptyHint');
   if(eh) eh.style.display='';
+  // 確保按鈕狀態完全重置
+  const btn = document.getElementById('hintBtn');
+  if(btn){
+    btn.innerHTML='<span class="btn-ico">💡</span>建議';
+    btn.classList.remove('thinking');
+    btn.disabled = false;
+  }
   drawBoard();
 }
 
