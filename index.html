@@ -8,6 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="五子棋">
 <meta name="theme-color" content="#1a1008">
 <link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>五子棋</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
 <style>
@@ -1067,6 +1068,15 @@ function switchTab(tab){
 
 /* ── Init ── */
 initBoard();
+
+/* ── Service Worker 註冊（PWA 離線支援） ── */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('✅ SW 已註冊:', reg.scope))
+      .catch(err => console.error('❌ SW 註冊失敗:', err));
+  });
+}
 </script>
 </body>
 </html>

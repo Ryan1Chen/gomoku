@@ -1,9 +1,11 @@
 // Service Worker — 讓五子棋可以離線遊玩
-const CACHE_NAME = 'gomoku-v1';
+const CACHE_NAME = 'gomoku-v2';
 const ASSETS = [
-  './',
-  './index.html',
-  './manifest.json'
+  '/gomoku/',
+  '/gomoku/index.html',
+  '/gomoku/manifest.json',
+  '/gomoku/icon-192.png',
+  '/gomoku/icon-512.png'
 ];
 
 self.addEventListener('install', event => {
